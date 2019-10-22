@@ -48,14 +48,20 @@ contract('Swap Validator', (accounts) => {
 
     before(async () => {
         swapValidator = await Swap.new({ from: accounts[0] });
+        console.log('deploy cost: ', await Swap.new.estimateGas({ from: accounts[0] }));
     });
 
     describe('Success States', () => {
-        it('should validate Swap proof', async () => {
+        it.only('should validate Swap proof', async () => {
             const { inputNotes, outputNotes } = await getDefaultNotes();
+            outputNotes.forEach((individualNote) => {
+                return individualNote.setMetaData(customMetaData.data);
+            });
             const proof = new SwapProof(inputNotes, outputNotes, sender);
             const data = proof.encodeABI();
             const result = await swapValidator.validateSwap(data, sender, bn128.CRS, { from: sender });
+            console.log('validate gas cost: ', await swapValidator.validateSwap.estimateGas(data, sender, bn128.CRS, { from: sender }));
+
             expect(result).to.equal(proof.eth.outputs);
         });
 

@@ -9,6 +9,10 @@ const { padLeft, randomHex } = require('web3-utils');
 
 const { FAKE_CRS, mockZeroDividendProof } = require('../../../helpers/proof');
 
+const helpers = require('../../../helpers/ERC1724');
+
+const { customMetaData } = helpers;
+
 const Dividend = artifacts.require('./Dividend');
 const DividendInterface = artifacts.require('./DividendInterface');
 Dividend.abi = DividendInterface.abi;
@@ -39,14 +43,20 @@ contract('Dividend Validator', (accounts) => {
 
     before(async () => {
         dividendValidator = await Dividend.new({ from: sender });
+        console.log('deploy gas cost: ', await Dividend.new.estimateGas({ from: sender }));
     });
 
     describe('Success States', () => {
-        it('should validate Dividend proof', async () => {
+        it.only('should validate Dividend proof', async () => {
             const { notionalNote, residualNote, targetNote, za, zb } = await getDefaultNotes();
+
+            residualNote.setMetaData(customMetaData.data);
+            targetNote.setMetaData(customMetaData.data);
+
             const proof = new DividendProof(notionalNote, residualNote, targetNote, sender, za, zb);
             const data = proof.encodeABI();
             const result = await dividendValidator.validateDividend(data, sender, bn128.CRS, { from: sender });
+            console.log('validate gas cost: ', await dividendValidator.validateDividend.estimateGas(data, sender, bn128.CRS, { from: sender }));
             expect(result).to.equal(proof.eth.outputs);
         });
 

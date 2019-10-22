@@ -8,6 +8,10 @@ const sinon = require('sinon');
 const truffleAssert = require('truffle-assertions');
 const { padLeft, randomHex } = require('web3-utils');
 
+const helpers = require('../../../helpers/ERC1724');
+
+const { customMetaData } = helpers;
+
 const { FAKE_CRS, mockZeroJoinSplitFluidProof } = require('../../../helpers/proof');
 
 const JoinSplitFluidValidator = artifacts.require('./JoinSplitFluid');
@@ -43,14 +47,22 @@ contract('Mint Validator', (accounts) => {
 
     before(async () => {
         joinSplitFluidValidator = await JoinSplitFluidValidator.new({ from: sender });
+        console.log('deploy gas cost: ', await JoinSplitFluidValidator.new.estimateGas({ from: sender }));
     });
 
     describe('Success States', () => {
         it('should validate Mint proof', async () => {
             const { currentMintCounterNote, newMintCounterNote, mintedNotes } = await getDefaultMintNotes();
+
+            mintedNotes.forEach((individualNote) => {
+                return individualNote.setMetaData(customMetaData.data);
+            });
+            
             const proof = new MintProof(currentMintCounterNote, newMintCounterNote, mintedNotes, sender);
             const data = proof.encodeABI();
             const result = await joinSplitFluidValidator.validateJoinSplitFluid(data, sender, bn128.CRS);
+            console.log('mint gas cost: ', await joinSplitFluidValidator.validateJoinSplitFluid.estimateGas(data, sender, bn128.CRS));;
+
             expect(result).to.equal(proof.eth.outputs);
         });
 
@@ -357,9 +369,14 @@ contract('Burn Validator', (accounts) => {
     describe('Success States', () => {
         it('should validate Burn proof', async () => {
             const { currentBurnCounterNote, newBurnCounterNote, burnedNotes } = await getDefaultBurnNotes();
+            burnedNotes.forEach((individualNote) => {
+                return individualNote.setMetaData(customMetaData.data);
+            });
             const proof = new BurnProof(currentBurnCounterNote, newBurnCounterNote, burnedNotes, sender);
             const data = proof.encodeABI();
             const result = await joinSplitFluidValidator.validateJoinSplitFluid(data, sender, bn128.CRS);
+            console.log('mint gas cost: ', await joinSplitFluidValidator.validateJoinSplitFluid.estimateGas(data, sender, bn128.CRS));;
+
             expect(result).to.equal(proof.eth.outputs);
         });
 

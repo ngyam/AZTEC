@@ -8,6 +8,10 @@ const { padLeft, randomHex } = require('web3-utils');
 
 const { FAKE_CRS, mockZeroPrivateRangeProof } = require('../../../helpers/proof');
 
+const helpers = require('../../../helpers/ERC1724');
+
+const { customMetaData } = helpers;
+
 const PrivateRange = artifacts.require('./PrivateRange');
 const PrivateRangeInterface = artifacts.require('./PrivateRangeInterface');
 PrivateRange.abi = PrivateRangeInterface.abi;
@@ -40,14 +44,19 @@ contract('Private range validator', (accounts) => {
 
     before(async () => {
         privateRangeValidator = await PrivateRange.new({ from: sender });
+        console.log('deploy cost: ', await PrivateRange.new.estimateGas({ from: sender }));
     });
 
     describe('Success States', () => {
-        it('should validate private range proof', async () => {
+        it.only('should validate private range proof', async () => {
             const { originalNote, comparisonNote, utilityNote } = await getDefaultNotes();
             const proof = new PrivateRangeProof(originalNote, comparisonNote, utilityNote, sender);
+            comparisonNote.setMetaData(customMetaData.data);
+            utilityNote.setMetaData(customMetaData.data);
             const data = proof.encodeABI();
             const result = await privateRangeValidator.validatePrivateRange(data, sender, bn128.CRS, { from: sender });
+            console.log('validate gas cost: ', await privateRangeValidator.validatePrivateRange.estimateGas(data, sender, bn128.CRS, { from: sender }));
+
             expect(result).to.equal(proof.eth.outputs);
         });
 

@@ -8,6 +8,10 @@ const { padLeft, randomHex } = require('web3-utils');
 
 const { FAKE_CRS, mockZeroPublicRangeProof } = require('../../../helpers/proof');
 
+const helpers = require('../../../helpers/ERC1724');
+
+const { customMetaData } = helpers;
+
 const PublicRange = artifacts.require('./PublicRange');
 const PublicRangeInterface = artifacts.require('./PublicRangeInterface');
 PublicRange.abi = PublicRangeInterface.abi;
@@ -45,15 +49,19 @@ contract('Public range validator', (accounts) => {
 
     before(async () => {
         publicRangeValidator = await PublicRange.new({ from: sender });
+        console.log('deploy gas cost: ', await PublicRange.new.estimateGas({ from: sender }));
     });
 
     describe('Greater than tests', () => {
         describe('Success states', () => {
-            it('should validate public range proof when given explicit utilityNote', async () => {
+            it.only('should validate public range proof when given explicit utilityNote', async () => {
                 const { originalNote, utilityNote, publicComparison, isGreaterOrEqual } = await getDefaultGreaterThanNotes();
+                utilityNote.setMetaData(customMetaData.data);
                 const proof = new PublicRangeProof(originalNote, publicComparison, sender, isGreaterOrEqual, utilityNote);
                 const data = proof.encodeABI();
                 const result = await publicRangeValidator.validatePublicRange(data, sender, bn128.CRS, { from: sender });
+                console.log('validate gas cost: ', await publicRangeValidator.validatePublicRange.estimateGas(data, sender, bn128.CRS, { from: sender }));
+
                 expect(result).to.equal(proof.eth.outputs);
             });
 

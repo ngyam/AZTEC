@@ -53,23 +53,29 @@ contract('ACE', (accounts) => {
 
         beforeEach(async () => {
             ace = await ACE.new({ from: sender });
+            console.log('deployment gas cost: ', await ACE.new.estimateGas({ from: sender }));
         });
 
         it('should set the owner', async () => {
             const owner = await ace.owner();
+            console.log('gas cost: ', await ace.owner.estimateGas());
             expect(owner).to.equal(accounts[0]);
         });
 
         it('should set the common reference string', async () => {
             await ace.setCommonReferenceString(bn128.CRS, { from: accounts[0] });
+            console.log('set gas cost: ', await ace.setCommonReferenceString.estimateGas(bn128.CRS));
             const result = await ace.getCommonReferenceString();
+            console.log('get gas cost: ', await ace.getCommonReferenceString.estimateGas());
             expect(result).to.deep.equal(bn128.CRS);
         });
 
         it('should set a proof', async () => {
             const joinSplitValidator = await JoinSplitValidator.new({ from: sender });
             await ace.setProof(JOIN_SPLIT_PROOF, joinSplitValidator.address);
+            console.log('set proof gas cost: ', await ace.setProof.estimateGas(JOIN_SPLIT_PROOF, joinSplitValidator.address));
             const resultValidatorAddress = await ace.getValidatorAddress(JOIN_SPLIT_PROOF);
+            console.log('get validator address gas cost: ', await ace.getValidatorAddress.estimateGas(JOIN_SPLIT_PROOF));
             expect(resultValidatorAddress).to.equal(joinSplitValidator.address);
         });
     });
@@ -105,12 +111,15 @@ contract('ACE', (accounts) => {
         describe('Success States', () => {
             it('should read the validator address', async () => {
                 const validatorAddress = await ace.getValidatorAddress(JOIN_SPLIT_PROOF);
+                console.log('get validator address gas cost: ', await ace.getValidatorAddress.estimateGas(JOIN_SPLIT_PROOF));
                 expect(validatorAddress).to.equal(joinSplitValidator.address);
             });
 
             it('should increment the latest epoch', async () => {
                 const latestEpoch = new BN(await ace.latestEpoch()).add(new BN(1));
+                console.log('latestgas cost: ', await ace.latestEpoch.estimateGas());
                 await ace.incrementLatestEpoch();
+                console.log('increment gas cost: ', await ace.incrementLatestEpoch.estimateGas());
                 const newLatestEpoch = await ace.latestEpoch();
                 expect(newLatestEpoch.toString()).to.equal(latestEpoch.toString());
             });
@@ -120,20 +129,20 @@ contract('ACE', (accounts) => {
                 proof = new JoinSplitProof(inputNotes, outputNotes, sender, publicValue, publicOwner);
                 const data = proof.encodeABI(joinSplitValidator.address);
                 const { receipt } = await ace.validateProof(JOIN_SPLIT_PROOF, sender, data);
+                console.log('validate gas cost: ', await ace.validateProof.estimateGas(JOIN_SPLIT_PROOF, sender, data));
                 expect(receipt.status).to.equal(true);
                 const result = await ace.validatedProofs(proof.validatedProofHash);
+                console.log('validated proofs gas cost: ', await ace.validatedProofs.estimateGas(proof.validatedProofHash));
                 expect(result).to.equal(true);
             });
 
             it('should have a wrapper contract validate a join-split transaction', async () => {
                 const aceTest = await ACETest.new();
                 await aceTest.setACEAddress(ace.address);
-
-                const { inputNotes, outputNotes, publicValue } = await getDefaultNotes();
-                proof = new JoinSplitProof(inputNotes, outputNotes, sender, publicValue, publicOwner);
-
+                console.log('set gas cost: ', await aceTest.setACEAddress.estimateGas(ace.address));
                 const data = proof.encodeABI(joinSplitValidator.address);
                 const { receipt } = await aceTest.validateProof(JOIN_SPLIT_PROOF, sender, data);
+                console.log('validate gas cost: ', await aceTest.validateProof.estimateGas(JOIN_SPLIT_PROOF, sender, data));
                 expect(proof.eth.outputs).to.equal(receipt.logs[0].args.proofOutputs);
             });
 
@@ -143,7 +152,9 @@ contract('ACE', (accounts) => {
                 const data = proof.encodeABI(joinSplitValidator.address);
 
                 await ace.validateProof(JOIN_SPLIT_PROOF, sender, data);
+                console.log('validate gas cost: ', await ace.validateProof.estimateGas(JOIN_SPLIT_PROOF, sender, data));
                 const result = await ace.validateProofByHash(JOIN_SPLIT_PROOF, proof.hash, sender);
+                console.log('validate proof by hash gas cost: ', await ace.validateProofByHash.estimateGas(JOIN_SPLIT_PROOF, proof.hash, sender));
                 expect(result).to.equal(true);
             });
 
@@ -152,12 +163,14 @@ contract('ACE', (accounts) => {
                 proof = new JoinSplitProof(inputNotes, outputNotes, sender, publicValue, publicOwner);
 
                 const result = await ace.validateProofByHash(proofs.BOGUS_PROOF, proof.hash, sender);
+                console.log('validate gas cost: ', await ace.validateProofByHash.estimateGas(proofs.BOGUS_PROOF, proof.hash, sender));
                 expect(result).to.equal(false);
             });
 
             it('should not validate an invalid proof hash', async () => {
                 const bogusProofHash = '0x0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff';
                 const result = await ace.validateProofByHash(JOIN_SPLIT_PROOF, bogusProofHash, sender);
+                console.log('validate gas cost: ', await ace.validateProofByHash.estimateGas(JOIN_SPLIT_PROOF, bogusProofHash, sender));
                 expect(result).to.equal(false);
             });
 
@@ -167,10 +180,15 @@ contract('ACE', (accounts) => {
 
                 const data = proof.encodeABI(joinSplitValidator.address);
                 await ace.validateProof(JOIN_SPLIT_PROOF, sender, data);
+                console.log('validate gas cost: ', await ace.validateProof.estimateGas(JOIN_SPLIT_PROOF, sender, data));
                 const firstResult = await ace.validateProofByHash(JOIN_SPLIT_PROOF, proof.hash, sender);
+                console.log('validate proof by hash gas cost: ', await ace.validateProofByHash.estimateGas(JOIN_SPLIT_PROOF, proof.hash, sender));
                 expect(firstResult).to.equal(true);
                 await ace.clearProofByHashes(JOIN_SPLIT_PROOF, [proof.hash]);
+                console.log('clear proof by hashes: ', await ace.clearProofByHashes.estimateGas(JOIN_SPLIT_PROOF, [proof.hash]));
+
                 const secondResult = await ace.validateProofByHash(JOIN_SPLIT_PROOF, proof.hash, sender);
+                console.log('validate proof by hash: ', await ace.validateProofByHash.estimateGas(JOIN_SPLIT_PROOF, proof.hash, sender));
                 expect(secondResult).to.equal(false);
             });
 
@@ -302,6 +320,7 @@ contract('ACE', (accounts) => {
 
             it('should not get address of validator if proof was invalidated', async () => {
                 await ace.invalidateProof(JOIN_SPLIT_PROOF);
+                console.log('gas cost: ', await ace.invalidateProof.estimateGas(JOIN_SPLIT_PROOF));
 
                 await truffleAssert.reverts(
                     ace.getValidatorAddress(JOIN_SPLIT_PROOF, { from: accounts[0] }),

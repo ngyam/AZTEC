@@ -79,6 +79,7 @@ contract('ZkAssetAdjustable', (accounts) => {
             const proof = new MintProof(zeroMintCounterNote, newMintCounterNote, mintedNotes, sender);
             const data = proof.encodeABI();
             const { receipt } = await zkAssetAdjustable.confidentialMint(MINT_PROOF, data, { from: accounts[0] });
+            console.log('confidential mint cost: ', await zkAssetAdjustable.confidentialMint.estimateGas(MINT_PROOF, data, { from: accounts[0] }));
             expect(receipt.status).to.equal(true);
         });
 
@@ -146,6 +147,7 @@ contract('ZkAssetAdjustable', (accounts) => {
             const burnData = burnProof.encodeABI(zkAssetAdjustable.address);
 
             const { receipt: burnReceipt } = await zkAssetAdjustable.confidentialBurn(BURN_PROOF, burnData);
+            console.log('confidential burn cost: ', await zkAssetAdjustable.confidentialBurn.estimateGas(BURN_PROOF, burnData));
             expect(burnReceipt.status).to.equal(true);
         });
 
@@ -172,6 +174,16 @@ contract('ZkAssetAdjustable', (accounts) => {
             const erc20TotalSupplyAfterMint = (await erc20.totalSupply()).toNumber();
             expect(erc20TotalSupplyAfterMint).to.equal(0);
 
+            const signature = signer.signNoteForConfidentialApprove(
+                zkAssetAdjustable.address,
+                mintedNotes[0].noteHash,
+                delegateAddress,
+                true,
+                aztecAccount.privateKey,
+            );
+            // eslint-disable-next-line no-await-in-loop
+            console.log('confidential approve gas cost: ', await zkAssetAdjustable.confidentialApprove.estimateGas(mintedNotes[0].noteHash, delegateAddress, true, signature))
+
             await confidentialApprove(zkAssetAdjustable, delegateAddress, [0, 1], mintedNotes, aztecAccount);
             const withdrawalPublicOwner = accounts[3];
             const withdrawalPublicValue = 50;
@@ -191,6 +203,10 @@ contract('ZkAssetAdjustable', (accounts) => {
                 withdrawalProof.eth.output,
                 { from: delegateAddress },
             );
+            console.log('confidentialTransferFrom cost: ', await zkAssetAdjustable.confidentialTransferFrom.estimateGas(JOIN_SPLIT_PROOF,
+                withdrawalProof.eth.output,
+                { from: delegateAddress },
+            ));
             expect(transferReceipt.status).to.equal(true);
 
             const erc20TotalSupplyAfterWithdrawal = (await erc20.totalSupply()).toNumber();

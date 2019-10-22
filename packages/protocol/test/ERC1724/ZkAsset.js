@@ -93,6 +93,7 @@ contract('ZkAsset', (accounts) => {
 
         it('should compute the correct domain hash', async () => {
             const zkAsset = await ZkAsset.new(ace.address, erc20.address, scalingFactor);
+            console.log('zkasset deploy cost: ', await ZkAsset.new.estimateGas(ace.address, erc20.address, scalingFactor));
             const domainHash = computeDomainHash(zkAsset.address);
             const result = await zkAsset.EIP712_DOMAIN_HASH();
             expect(result).to.equal(domainHash);
@@ -107,6 +108,7 @@ contract('ZkAsset', (accounts) => {
         it('should set the flags', async () => {
             const zkAsset = await ZkAsset.new(ace.address, erc20.address, scalingFactor);
             const registry = await ace.getRegistry(zkAsset.address);
+            console.log('get registry cost: ', await ace.getRegistry.estimateGas(zkAsset.address));
             expect(registry.canAdjustSupply).to.equal(false);
             expect(registry.canConvert).to.equal(true);
         });
@@ -176,6 +178,9 @@ contract('ZkAsset', (accounts) => {
             const { receipt } = await zkAsset.methods['confidentialTransfer(bytes,bytes)'](data, signatures, {
                 from: accounts[0],
             });
+            console.log('confidentialTransfer cost: ', await zkAsset.methods['confidentialTransfer(bytes,bytes)'].estimateGas(data, signatures, {
+                from: accounts[0],
+            }))
             const balancePostTransfer = await erc20.balanceOf(accounts[0]);
             expect(balancePostTransfer.toString()).to.equal(expectedBalancePostTransfer.toString());
 
@@ -314,6 +319,11 @@ contract('ZkAsset', (accounts) => {
             const { receipt } = await zkAsset.methods['confidentialTransfer(bytes,bytes)'](transferData, transferSignatures, {
                 from: accounts[0],
             });
+
+            console.log('confidential transfer cost: ', await zkAsset.methods['confidentialTransfer(bytes,bytes)'].estimateGas(transferData, transferSignatures, {
+                from: accounts[0],
+            }));
+
             expect(receipt.status).to.equal(true);
         });
 
@@ -449,6 +459,10 @@ contract('ZkAsset', (accounts) => {
             await zkAsset.updateNoteMetaData(depositOutputNotes[0].noteHash, customMetaData.dataWithNewEphemeral, {
                 from: noteOwnerAccount.address,
             });
+
+            console.log('update note metadata gas cost: ', await zkAsset.updateNoteMetaData.estimateGas(depositOutputNotes[0].noteHash, customMetaData.dataWithNewEphemeral, {
+                from: noteOwnerAccount.address,
+            }));
 
             // Call the updateNoteMetaData() function with an address that should have been approved
             const revisedCustomDataLength = revisedCustomMetaData.dataWithNewEphemeral.length;

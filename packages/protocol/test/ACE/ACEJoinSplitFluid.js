@@ -112,6 +112,7 @@ contract('ACE Mint and Burn Functionality', (accounts) => {
             const mintProof = new MintProof(zeroMintCounterNote, newMintCounterNote, mintedNotes, sender);
             const mintData = mintProof.encodeABI();
             const { receipt: mintReceipt } = await ace.mint(MINT_PROOF, mintData, sender);
+            console.log('gas cost: ', await ace.mint.estimateGas(MINT_PROOF, mintData, sender));
             expect(mintReceipt.status).to.equal(true);
 
             // burn the minted notes
@@ -121,6 +122,8 @@ contract('ACE Mint and Burn Functionality', (accounts) => {
             const burnProof = new BurnProof(zeroBurnCounterNote, newBurnCounterNote, burnedNotes, sender);
             const burnData = burnProof.encodeABI();
             const { receipt: burnReceipt } = await ace.burn(BURN_PROOF, burnData, sender);
+            console.log('burn cost: ', await ace.burn.estimateGas(BURN_PROOF, burnData, sender));
+
             expect(burnReceipt.status).to.equal(true);
         });
     });
@@ -285,8 +288,11 @@ contract('ACE Mint and Burn Functionality', (accounts) => {
             const depositData = depositProof.encodeABI(joinSplitValidator.address);
 
             await ace.publicApprove(ownerA, depositProof.hash, 50, { from: ownerA });
+            console.log('public approve: ', await ace.publicApprove.estimateGas(ownerA, depositProof.hash, 50, { from: ownerA }));
+
             await ace.validateProof(JOIN_SPLIT_PROOF, ownerA, depositData, { from: ownerA });
             await ace.updateNoteRegistry(JOIN_SPLIT_PROOF, depositProof.eth.output, ownerA, { from: ownerA });
+            console.log('update note registry cost: ', await ace.updateNoteRegistry.estimateGas(JOIN_SPLIT_PROOF, depositProof.eth.output, ownerA, { from: ownerA }));
 
             // Attacker creates a note registry, linked to same public ERC20 contract
             const canAdjustSupplyAttacker = true;

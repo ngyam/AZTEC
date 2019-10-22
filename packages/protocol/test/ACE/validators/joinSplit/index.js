@@ -7,10 +7,14 @@ const truffleAssert = require('truffle-assertions');
 const { padLeft, randomHex } = require('web3-utils');
 
 const { FAKE_CRS, mockZeroJoinSplitProof } = require('../../../helpers/proof');
+const helpers = require('../../../helpers/ERC1724');
+
+const { customMetaData } = helpers;
 
 const JoinSplitValidator = artifacts.require('./JoinSplit');
 const JoinSplitValidatorInterface = artifacts.require('./JoinSplitInterface');
 JoinSplitValidator.abi = JoinSplitValidatorInterface.abi;
+
 
 const Keccak = keccak;
 const aztecAccount = secp256k1.generateAccount();
@@ -45,14 +49,23 @@ contract('Join-Split Validator', (accounts) => {
 
     before(async () => {
         joinSplitValidator = await JoinSplitValidator.new({ from: sender });
+        console.log('deploy gas cost: ', await JoinSplitValidator.new.estimateGas({ from: sender }));
+
     });
 
     describe('Success States', () => {
-        it('should validate Join-Split proof with negative public value', async () => {
+        it.only('should validate Join-Split proof with negative public value', async () => {
             const { inputNotes, outputNotes, publicValue } = await getDefaultNotes();
+            outputNotes.forEach((individualNote) => {
+                return individualNote.setMetaData(customMetaData.data);
+            });
+
+            console.log('custom metadata: ', customMetaData.data);
             const proof = new JoinSplitProof(inputNotes, outputNotes, sender, publicValue, publicOwner);
             const data = proof.encodeABI(joinSplitValidator.address);
             const result = await joinSplitValidator.validateJoinSplit(data, sender, bn128.CRS);
+            console.log('validate gas cost: ', await joinSplitValidator.validateJoinSplit.estimateGas(data, sender, bn128.CRS, { from: sender }));
+
             expect(result).to.equal(proof.eth.outputs);
         });
 
