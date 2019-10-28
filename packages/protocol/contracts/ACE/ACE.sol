@@ -394,6 +394,12 @@ contract ACE is IAZTEC, Ownable, NoteRegistryManager, Chargeable {
         }
     }
 
+    /**
+    * @dev Set the gas cost for a particular proof
+    * @param _proofId unique identifier for a proof, used to specify which proof
+    * the _gasCost is being set for
+    * @param _gasCost gas cost associated with the proof specified by _proofId
+    */
     function setProofGasCost(uint24 _proofId, uint256 _gasCost)
         public
         onlyOwner
@@ -402,15 +408,23 @@ contract ACE is IAZTEC, Ownable, NoteRegistryManager, Chargeable {
         emit SetGasCostForProof(_proofId, _gasCost);
     }
 
+    /**
+    * @dev Set the gas multplier
+    * @param _multiplier multiplier applied to the gas fee charged for the transaction
+    */
     function setGasMultiplier(uint256 _multiplier)
         public
         onlyOwner
     {
-        require(_multiplier <= 2000, "can not set the multiplier to be above 2x");
         gasMultiplier = _multiplier;
         emit SetGasMultiplier(_multiplier);
     }
 
+    /**
+    * @dev Withdraw funds from the ACE contract to a specified address
+    * @param _destination Ethereum address to which funds are being withdrawn
+    * @param _amount quantity of funds to be transferred
+    */
     function withdraw(address payable _destination, uint256 _amount)
         public
         onlyOwner
@@ -418,7 +432,7 @@ contract ACE is IAZTEC, Ownable, NoteRegistryManager, Chargeable {
     {
         require(_destination != address(0x0), "can not withdraw to 0x0 address");
         require(_amount <= address(this).balance, "can not withdraw more than balance");
-        _destination.transfer(address(this).balance);
+        _destination.transfer(_amount);
         return true;
     }
 }
