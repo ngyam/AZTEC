@@ -29,6 +29,7 @@ const decodeLog = rawLog => ({
         const inputs = findInputsFromAbi(IZkAssetConfig.events.createNote);
         return {
             ...decode(inputs, rawLog),
+            transactionHash: rawLog.transactionHash,
             asset: rawLog.address,
             status: NOTE_STATUS.CREATED,
         };
@@ -37,6 +38,7 @@ const decodeLog = rawLog => ({
         const inputs = findInputsFromAbi(IZkAssetConfig.events.updateNoteMetaData);
         return {
             ...decode(inputs, rawLog),
+            transactionHash: rawLog.transactionHash,
             asset: rawLog.address,
             status: NOTE_STATUS.CREATED,
         };
@@ -45,6 +47,7 @@ const decodeLog = rawLog => ({
         const inputs = findInputsFromAbi(IZkAssetConfig.events.destroyNote);
         return {
             ...decode(inputs, rawLog),
+            transactionHash: rawLog.transactionHash,
             asset: rawLog.address,
             status: NOTE_STATUS.DESTROYED,
         };
@@ -58,6 +61,7 @@ const noteLog = decodedLog => ({
     asset: decodedLog.asset,
     status: decodedLog.status,
     metadata: decodedLog.metadata,
+    transactionHash: decodedLog.transactionHash,
 });
 
 export default function decodeNoteLogs(eventsTopics, rawLogs) {
